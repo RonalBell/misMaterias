@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Estudiantil</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Chart.js para los gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Agregar en el head, después de Bootstrap -->
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Tema claro (default) */
+            --kawaii-pink: #FFB7C5;
+            --kawaii-blue: #B7D4FF;
+            --kawaii-purple: #E2B7FF;
+            --kawaii-yellow: #FFE5B7;
+            --kawaii-green: #B7FFD8;
+            --bg-primary: #FFF5F7;
+            --bg-secondary: #ffffff;
+            --text-primary: #333333;
+            --text-secondary: #666666;
+            --shadow-color: rgba(0,0,0,0.1);
+            --border-color: rgba(0,0,0,0.1);
+        }
+
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-y: auto !important;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar {
+            background: linear-gradient(135deg, var(--kawaii-pink), var(--kawaii-purple));
+            border-radius: 0 20px 20px 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            z-index: 1000;
+        }
+
+        .card {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            border-radius: 20px;
+            border: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            overflow: hidden;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--kawaii-blue), var(--kawaii-purple));
+            color: white;
+            font-weight: 600;
+            border: none;
+        }
+
+        .btn-kawaii {
+            background: linear-gradient(135deg, var(--kawaii-pink), var(--kawaii-purple));
+            border: none;
+            border-radius: 25px;
+            color: white;
+            font-weight: 500;
+            padding: 8px 20px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-kawaii:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .list-group-item {
+            border-radius: 15px !important;
+            margin-bottom: 0.5rem;
+            border: 2px solid var(--kawaii-pink);
+            transition: all 0.3s ease;
+        }
+
+        .list-group-item:hover {
+            transform: translateX(5px);
+            background-color: var(--kawaii-pink);
+            color: white;
+        }
+
+        .profile-section img {
+            border: 4px solid white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .table {
+            background: white;
+            border-radius: 15px;
+        }
+
+        .table th {
+            background: var(--kawaii-purple);
+            color: white;
+        }
+
+        .badge {
+            border-radius: 12px;
+            padding: 5px 10px;
+        }
+
+        /* Estilo kawaii para los modales */
+        .modal-content {
+            border-radius: 20px;
+            border: none;
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--kawaii-pink), var(--kawaii-purple));
+            color: white;
+            border-radius: 20px 20px 0 0;
+        }
+
+        /* Estilo para las tareas */
+        .tarea-card {
+            border-radius: 15px;
+            border: 2px solid var(--kawaii-pink);
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .tarea-card:hover {
+            transform: translateY(-2px);
+        }
+
+        /* Iconos kawaii */
+        .kawaii-icon {
+            font-size: 1.2rem;
+            margin-right: 5px;
+        }
+
+        /* Ajustes adicionales para mejor visualización */
+        .btn-kawaii {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .card {
+            margin-bottom: 0;
+        }
+
+        .table th, .table td {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .tarea-card {
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        /* Hacer los scrollbars más bonitos */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--kawaii-pink);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--kawaii-purple);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--kawaii-blue);
+        }
+
+        /* Ajustes para los gráficos */
+        canvas {
+            height: 100% !important;
+            width: 100% !important;
+        }
+
+        .card-body {
+            flex: 1;
+            overflow: auto;
+        }
+
+        .table-responsive {
+            max-height: calc(50vh - 40px);
+        }
+
+        /* Estilos responsivos */
+        @media (max-width: 768px) {
+            body {
+                overflow-y: auto !important;
+            }
+
+            .sidebar {
+                position: sticky;
+                top: 0;
+                height: auto;
+                min-height: auto;
+                margin-bottom: 1rem;
+                border-radius: 0 0 20px 20px;
+            }
+
+            .row.vh-100 {
+                height: auto !important;
+                min-height: 100vh;
+            }
+
+            .col-lg-10.col-md-9 {
+                height: auto !important;
+                overflow: visible;
+            }
+
+            .row[style*="height: 45vh"] {
+                height: auto !important;
+                margin-bottom: 1rem;
+            }
+
+            .card {
+                height: auto !important;
+                margin-bottom: 1rem;
+            }
+
+            .card-body {
+                height: auto;
+                max-height: none;
+            }
+
+            .table-responsive {
+                max-height: none;
+            }
+
+            #listaTareas {
+                max-height: 300px;
+                overflow-y: auto;
+            }
+
+            canvas {
+                max-height: 300px !important;
+            }
+        }
+
+        /* Ajustes para pantallas muy pequeñas */
+        @media (max-width: 576px) {
+            .container-fluid {
+                padding: 0.5rem;
+            }
+
+            .card {
+                margin-bottom: 0.5rem;
+            }
+
+            .row {
+                margin: -0.25rem;
+            }
+
+            .col-12, .col-md-6 {
+                padding: 0.25rem;
+            }
+        }
+
+        /* Hacer los scrollbars más bonitos en contenedores específicos */
+        .table-responsive::-webkit-scrollbar,
+        #listaTareas::-webkit-scrollbar,
+        .list-group::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        .table-responsive::-webkit-scrollbar-track,
+        #listaTareas::-webkit-scrollbar-track,
+        .list-group::-webkit-scrollbar-track {
+            background: var(--kawaii-pink);
+            border-radius: 10px;
+        }
+
+        .table-responsive::-webkit-scrollbar-thumb,
+        #listaTareas::-webkit-scrollbar-thumb,
+        .list-group::-webkit-scrollbar-thumb {
+            background: var(--kawaii-purple);
+            border-radius: 10px;
+        }
+
+        /* Animaciones Kawaii mejoradas */
+        @keyframes softFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        @keyframes gentlePulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.02); opacity: 0.9; }
+        }
+
+        @keyframes delicateSparkle {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; filter: brightness(1.2); }
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: -200% center;
+            }
+            100% {
+                background-position: 200% center;
+            }
+        }
+
+        /* Aplicar animaciones mejoradas */
+        .profile-section img {
+            animation: softFloat 3s ease-in-out infinite;
+            transition: all 0.3s ease;
+        }
+
+        .profile-section img:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(255,255,255,0.5);
+        }
+
+        .kawaii-icon {
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover .kawaii-icon {
+            animation: gentlePulse 1s ease-in-out infinite;
+        }
+
+        .btn-kawaii {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            background-size: 200% auto;
+        }
+
+        .btn-kawaii:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255,183,197,0.4);
+            background-position: right center;
+        }
+
+        .btn-kawaii::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255,255,255,0.2),
+                transparent
+            );
+            transition: all 0.5s ease;
+        }
+
+        .btn-kawaii:hover::after {
+            left: 100%;
+        }
+
+        .card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+
+        .list-group-item {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: linear-gradient(90deg, transparent 50%, var(--kawaii-pink) 50%);
+            background-size: 200% 100%;
+            background-position: left center;
+        }
+
+        .list-group-item:hover {
+            background-position: right center;
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .badge {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(
+                45deg,
+                var(--kawaii-pink),
+                var(--kawaii-purple),
+                var(--kawaii-blue),
+                var(--kawaii-purple)
+            );
+            background-size: 300% 300%;
+            animation: shimmer 3s linear infinite;
+        }
+
+        .new-item {
+            animation: fadeInUp 0.5s ease-out forwards;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Efecto de brillo suave para el sidebar */
+        .sidebar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -150%;
+            width: 150%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255,255,255,0.1),
+                transparent
+            );
+            transform: skewX(-20deg);
+            animation: shine 6s infinite;
+        }
+
+        @keyframes shine {
+            0% { left: -150%; }
+            50%, 100% { left: 150%; }
+        }
+
+        /* Animación suave para las filas de la tabla */
+        .table tbody tr {
+            transition: all 0.3s ease;
+            background: linear-gradient(90deg, transparent 50%, rgba(255,183,197,0.1) 50%);
+            background-size: 200% 100%;
+            background-position: left center;
+        }
+
+        .table tbody tr:hover {
+            background-position: right center;
+            transform: scale(1.005);
+        }
+
+        /* Efecto de destello para elementos importantes */
+        .important-item {
+            position: relative;
+        }
+
+        .important-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(
+                45deg,
+                transparent,
+                rgba(255,255,255,0.1),
+                transparent
+            );
+            animation: delicateSparkle 2s infinite;
+            border-radius: inherit;
+        }
+
+        /* Animación para los modales */
+        .modal.show .modal-dialog {
+            animation: modalSlideIn 0.3s ease-out;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Efecto hover suave para botones de acción */
+        .btn-kawaii.btn-sm {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn-kawaii.btn-sm:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(255,183,197,0.3);
+        }
+
+        /* Kawaii Toast Notifications */
+        .kawaii-toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, var(--kawaii-pink), var(--kawaii-purple));
+            color: white;
+            padding: 15px 25px;
+            border-radius: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            z-index: 9999;
+        }
+
+        .kawaii-toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .kawaii-face {
+            font-size: 1.5em;
+            animation: bounce 1s infinite;
+        }
+
+        .kawaii-message {
+            font-size: 0.9em;
+        }
+
+        /* Mejorar animaciones existentes */
+        @keyframes sparkleText {
+            0%, 100% { text-shadow: 0 0 5px rgba(255,255,255,0.8); }
+            50% { text-shadow: 0 0 20px var(--kawaii-pink); }
+        }
+
+        @keyframes floatWithRotate {
+            0%, 100% { 
+                transform: translateY(0) rotate(0deg);
+            }
+            50% { 
+                transform: translateY(-5px) rotate(5deg);
+            }
+        }
+
+        @keyframes heartBeat {
+            0%, 100% { transform: scale(1); }
+            25% { transform: scale(1.1); }
+            40% { transform: scale(1); }
+            60% { transform: scale(1.1); }
+        }
+
+        /* Aplicar nuevas animaciones */
+        .btn-kawaii:hover .kawaii-icon {
+            animation: floatWithRotate 1s infinite;
+        }
+
+        .badge:hover {
+            animation: heartBeat 1.3s infinite;
+        }
+
+        .card-header {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-header::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255,255,255,0.2),
+                transparent
+            );
+            animation: shine 3s infinite;
+        }
+
+        /* Animaciones para estados especiales */
+        .materia-perdida {
+            animation: shake 0.5s ease-in-out;
+            background: rgba(255,0,0,0.1) !important;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .nota-perfecta {
+            animation: rainbow 2s infinite;
+        }
+
+        @keyframes rainbow {
+            0% { color: var(--kawaii-pink); }
+            33% { color: var(--kawaii-purple); }
+            66% { color: var(--kawaii-blue); }
+            100% { color: var(--kawaii-pink); }
+        }
+
+        /* Easter egg: Click en el título */
+        .card-header:active {
+            animation: bounce 0.5s;
+        }
+
+        /* Easter egg: Doble click en la foto de perfil */
+        .profile-section img:active {
+            animation: spin 1s linear;
+        }
+
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Easter egg: Hover en el sidebar por 3 segundos */
+        .sidebar:hover::before {
+            animation: rainbowShine 3s infinite;
+        }
+
+        @keyframes rainbowShine {
+            0% { 
+                background: linear-gradient(
+                    90deg,
+                    transparent,
+                    rgba(255,183,197,0.2),
+                    transparent
+                );
+            }
+            50% { 
+                background: linear-gradient(
+                    90deg,
+                    transparent,
+                    rgba(226,183,255,0.2),
+                    transparent
+                );
+            }
+            100% { 
+                background: linear-gradient(
+                    90deg,
+                    transparent,
+                    rgba(183,212,255,0.2),
+                    transparent
+                );
+            }
+        }
+
+        /* Estilo para el selector de semestres */
+        #semestreSelector {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid white;
+            color: white;
+            border-radius: 15px;
+            padding: 4px 25px 4px 10px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 5px center;
+            background-size: 20px;
+        }
+
+        #semestreSelector:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+        }
+
+        #semestreSelector option {
+            background: var(--kawaii-purple);
+            color: white;
+        }
+
+        /* Estilo para el botón de configuración */
+        .btn-config {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid white;
+            color: white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .btn-config:hover {
+            transform: rotate(180deg);
+            background: white;
+            color: var(--kawaii-purple);
+        }
+
+        /* Estilos para los badges de promedio */
+        .list-group-item .badge {
+            transition: all 0.3s ease;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .list-group-item:hover .badge {
+            transform: scale(1.1);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        /* Animación suave al cambiar promedios */
+        .badge {
+            transition: background 0.5s ease, transform 0.3s ease;
+        }
+
+        /* Estilos para la guía inicial */
+        .steps-guide .step {
+            padding: 15px;
+            border-radius: 10px;
+            background: rgba(255, 183, 197, 0.1);
+            margin-bottom: 15px;
+        }
+
+        .steps-guide .step h6 {
+            color: var(--kawaii-purple);
+            margin-bottom: 10px;
+        }
+
+        .steps-guide .step ul li {
+            margin: 8px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .steps-guide .step ul li:before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            width: 6px;
+            height: 6px;
+            background: var(--kawaii-pink);
+            border-radius: 50%;
+            transform: translateY(-50%);
+        }
+
+        /* Estilos para mejorar responsividad */
+        @media (max-width: 768px) {
+            .table td {
+                white-space: normal !important;
+            }
+
+            .btn-group-responsive {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 4px;
+            }
+
+            .btn-group-responsive .btn {
+                flex: 1;
+                min-width: auto;
+                padding: 4px 8px;
+                font-size: 0.8rem;
+            }
+
+            .asistencia-container {
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+            }
+
+            .asistencia-info {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 4px;
+            }
+
+            .acciones-container {
+                display: flex;
+                gap: 4px;
+                flex-wrap: wrap;
+            }
+
+            .acciones-container .btn {
+                flex: 1;
+                min-width: 70px;
+            }
+
+            /* Hacer los botones más compactos en móvil */
+            .btn-kawaii.btn-sm {
+                padding: 4px 8px;
+                font-size: 0.75rem;
+            }
+
+            /* Ajustar el tamaño de los emojis en móvil */
+            .btn-kawaii.btn-sm i,
+            .btn-kawaii.btn-sm span {
+                font-size: 0.9rem;
+            }
+        }
+
+        /* Mejorar visualización de botones en general */
+        .btn-kawaii {
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        /* Reemplazar los estilos del hover y focus */
+        .table > tbody > tr {
+            transition: background-color 0.3s ease;
+        }
+
+        /* Solo aplicar hover a las filas que tienen data-materia-id */
+        .table > tbody > tr[data-materia-id]:hover {
+            background-color: rgba(183, 212, 255, 0.1) !important; /* Color azul kawaii */
+        }
+
+        /* El focus solo se aplica a la fila específica */
+        tr.focus-kawaii {
+            background-color: rgba(255, 183, 197, 0.1) !important; /* Color rosa kawaii */
+        }
+
+        /* Evitar que el hover afecte a filas sin materias */
+        .table > tbody > tr:not([data-materia-id]):hover {
+            background-color: transparent !important;
+        }
+
+        /* Agregar en la sección de estilos */
+        .cursor-pointer {
+            cursor: pointer;
+        }
+
+        .badge:hover {
+            transform: scale(1.1);
+            transition: transform 0.2s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid py-2">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-lg-2 col-md-3 sidebar p-2">
+                <div class="profile-section text-center mb-2">
+                    <div class="position-relative d-inline-block">
+                        <img src="https://i.pravatar.cc/150" class="rounded-circle" width="50" height="50" alt="Foto de perfil" 
+                             id="profileImage" style="cursor: pointer;">
+                        <input type="file" id="imageInput" accept="image/*" style="display: none;">
+                        <div class="edit-overlay" style="display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; 
+                             background: rgba(0,0,0,0.5); border-radius: 50%; cursor: pointer;">
+                            <span style="color: white; line-height: 50px;">📷</span>
+                        </div>
+                    </div>
+                    <h6 class="mt-2 mb-0 text-white" id="profileName" style="cursor: pointer;">
+                        ✨ Estudiante-chan ✨
+                    </h6>
+                    <div class="d-flex align-items-center justify-content-center gap-2 mt-1">
+                        <select id="semestreSelector" class="form-select form-select-sm" style="width: auto;">
+                            <!-- Se llenará dinámicamente -->
+                        </select>
+                        <button class="btn btn-kawaii btn-sm p-1" onclick="gestorMaterias.mostrarModalSemestres()">
+                            ⚙️
+                        </button>
+                    </div>
+                </div>
+                <hr class="my-2 border-white">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="text-white mb-0">📚 Mis Materias</h6>
+                    <button class="btn btn-kawaii btn-sm" data-bs-toggle="modal" data-bs-target="#modalNuevaMateria">
+                        ✨
+                    </button>
+                </div>
+                <div class="list-group list-group-flush" id="listaMaterias" style="max-height: calc(100vh - 200px); overflow-y: auto;">
+                    <!-- Las materias se cargarán dinámicamente aquí -->
+                </div>              
+                <button class="btn btn-kawaii btn-sm mt-2 w-100" style="background: linear-gradient(135deg, #FF9999, #FF6666);" onclick="gestorMaterias.borrarDatos()">
+                    🗑️ Borrar Todo
+                </button>
+            </div>
+
+            <!-- Contenido Principal -->
+            <div class="col-lg-10 col-md-9 p-2">
+                <!-- Fila superior con gráfico y tareas -->
+                <div class="row g-2">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header py-1 px-2">
+                                <span class="kawaii-icon">📊</span> Promedio por Materia
+                            </div>
+                            <div class="card-body">
+                                <canvas id="graficoMaterias"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header py-1 px-2 d-flex justify-content-between align-items-center">
+                                <span><span class="kawaii-icon">📋</span> Tareas</span>
+                                <div>
+                                    <button class="btn btn-kawaii btn-sm py-0 px-2" onclick="gestorMaterias.mostrarHistorialTareas()">
+                                        📚 Historial
+                                    </button>
+                                <button class="btn btn-kawaii btn-sm py-0 px-2" onclick="gestorMaterias.mostrarModalNuevaTarea()">
+                                        ✨ Nueva
+                                </button>
+                                </div>
+                            </div>
+                            <div class="card-body p-2" style="overflow-y: auto;">
+                                <div id="listaTareas">
+                                    <!-- Se llenará dinámicamente -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fila inferior con tabla de materias -->
+                <div class="row mt-2">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header py-1 px-2">
+                                <span class="kawaii-icon">📚</span> Detalle de Materias
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive h-100">
+                                    <table class="table table-sm table-hover mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th class="py-1">Materia</th>
+                                                <th class="py-1">Profesor</th>
+                                                <th class="py-1">Nota</th>
+                                                <th class="py-1">Asistencia</th>
+                                                <th class="py-1">Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tablaMaterias">
+                                            <!-- Se llenará dinámicamente -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS y dependencias -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="script.js"></script>
+
+    <!-- Modal para Nueva Materia -->
+    <div class="modal fade" id="modalNuevaMateria" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Agregar Nueva Materia</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formNuevaMateria">
+                        <div class="mb-3">
+                            <label class="form-label">Nombre de la Materia</label>
+                            <input type="text" class="form-control" id="nombreMateria" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Profesor</label>
+                            <input type="text" class="form-control" id="profesorMateria" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Horario</label>
+                            <input type="text" class="form-control" id="horarioMateria" placeholder="Ej: Lunes y Miércoles 10:00-12:00" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Aula</label>
+                            <input type="text" class="form-control" id="aulaMateria" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Créditos</label>
+                            <input type="number" class="form-control" id="creditosMateria" min="1" max="10" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Límite de Inasistencias (%)</label>
+                            <input type="number" class="form-control" id="limiteInasistencias" min="0" max="100" value="20" required>
+                        </div>
+                        <div class="mb-3">
+                            <h6>Ponderaciones de Evaluación</h6>
+                            <div id="ponderaciones">
+                                <div class="row ponderacion-item mb-2">
+                                    <div class="col-5">
+                                        <input type="text" class="form-control" placeholder="Nombre" required>
+                                    </div>
+                                    <div class="col-5">
+                                        <input type="number" class="form-control" placeholder="%" min="0" max="100" required>
+                                    </div>
+                                    <div class="col-2">
+                                        <button type="button" class="btn btn-danger btn-sm" onclick="eliminarPonderacion(this)">×</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-secondary btn-sm mt-2" onclick="agregarPonderacion()">+ Agregar Ponderación</button>
+                            <div class="text-muted small mt-1">La suma debe ser 100%</div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Guardar Materia</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Ver Detalles -->
+    <div class="modal fade" id="modalDetalles" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Detalles de la Materia</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- El contenido se llenará dinámicamente -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Nueva Nota -->
+    <div class="modal fade" id="modalNuevaNota" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Agregar Nueva Nota</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formNuevaNota">
+                        <input type="hidden" id="materiaId">
+                        <div class="mb-3">
+                            <label class="form-label">Tipo de Evaluación</label>
+                            <select class="form-control" id="tipoPonderacionNota" required>
+                                <!-- Se llenará dinámicamente -->
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Descripción</label>
+                            <input type="text" class="form-control" id="descripcionNota" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Calificación (1.0 - 5.0)</label>
+                            <input type="number" class="form-control" id="valorNota" min="1.0" max="5.0" step="0.1" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Fecha</label>
+                            <input type="date" class="form-control" id="fechaNota" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Guardar Nota</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Nuevo Modal para Agregar Tarea -->
+    <div class="modal fade" id="modalNuevaTarea" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Nueva Tarea</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formNuevaTarea">
+                        <div class="mb-3">
+                            <label class="form-label">Materia</label>
+                            <select class="form-control" id="materiaIdTarea" required>
+                                <!-- Se llenará dinámicamente -->
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Descripción de la Tarea</label>
+                            <input type="text" class="form-control" id="descripcionTarea" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Fecha y Hora de Entrega</label>
+                            <input type="datetime-local" class="form-control" id="fechaEntregaTarea" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Guardar Tarea</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Agregar nuevo modal para gestión de semestres -->
+    <div class="modal fade" id="modalSemestres" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Gestionar Semestres</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formNuevoSemestre" class="mb-4">
+                        <div class="input-group mb-3">
+                            <input type="text" class="form-control" id="nombreSemestre" placeholder="Nombre del semestre" required>
+                            <button class="btn btn-kawaii" type="submit">✨ Crear</button>
+                        </div>
+                    </form>
+                    
+                    <h6>Semestres Existentes</h6>
+                    <div class="list-group" id="listaSemestres">
+                        <!-- Se llenará dinámicamente -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Agregar nuevo modal para historial de tareas -->
+    <div class="modal fade" id="modalHistorialTareas" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Historial de Tareas</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <ul class="nav nav-tabs mb-3" id="tareasTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#completadas">
+                                ✅ Completadas
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#vencidas">
+                                ⚠️ No Entregadas
+                            </button>
+                        </li>
+                    </ul>
+                    <div class="tab-content" id="tareasTabContent">
+                        <div class="tab-pane fade show active" id="completadas">
+                            <div id="tareasCompletadas"></div>
+                        </div>
+                        <div class="tab-pane fade" id="vencidas">
+                            <div id="tareasVencidas"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Agregar este modal al final del body -->
+    <div class="modal fade" id="modalEditarPerfil" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">✨ Editar Perfil ✨</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <div class="mb-4">
+                        <div class="position-relative d-inline-block">
+                            <img id="previewImage" src="https://i.pravatar.cc/150" 
+                                 class="rounded-circle mb-2" width="100" height="100" 
+                                 style="border: 3px solid var(--kawaii-pink); cursor: pointer;">
+                            <div class="position-absolute bottom-0 end-0">
+                                <button class="btn btn-kawaii btn-sm rounded-circle" 
+                                        onclick="document.getElementById('imageInputModal').click()">
+                                    📷
+                                </button>
+                            </div>
+                        </div>
+                        <input type="file" id="imageInputModal" accept="image/*" style="display: none;">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tu nombre</label>
+                        <input type="text" class="form-control text-center" id="nombreInput" 
+                               placeholder="¿Cómo quieres que te llame? (◕‿◕)♡">
+                    </div>
+                    <button class="btn btn-kawaii w-100" onclick="gestorMaterias.guardarPerfil()">
+                        ¡Guardar cambios! (｀∀´)Ψ
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
