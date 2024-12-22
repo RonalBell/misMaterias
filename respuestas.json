@@ -10,10 +10,13 @@
       { "texto": "¡Nueva nota! Mejor que tu récord de TikTok (•̀ᴗ•́)و", "emoji": "📱" },
       { "texto": "¡Nueva nota! ¿Usaste el poder de la amistad? (｡♥‿♥｡)", "emoji": "✨" },
       { "texto": "¡Nota agregada! Tu calculadora está orgullosa (◕‿◕)♡", "emoji": "🔢" },
-      { "texto": "¡Nueva nota! ¿Estudiaste o fue magia negra? (⊙_⊙)？", "emoji": "🔮" }
+      { "texto": "¡Nueva nota! ¿Estudiaste o fue magia negra? (⊙_⊙)？", "emoji": "🔮" },
+      { "texto": "¡Nueva nota! ¿Hiciste pacto con un genio? (⊙ω⊙)", "emoji": "🧞" },
+      { "texto": "¡Nota agregada! Tu cerebro está evolucionando (◕‿◕)♡", "emoji": "🧬" },
+      { "texto": "¡Nueva nota! ¿Estudiaste o fue suerte? (¬‿¬)", "emoji": "🎲" }
     ],
     "alta": [
-      { "texto": "¡INCREÍBLE! Eres el Einstein kawaii (ﾉ´ヮ`)ﾉ*: ･ﾟ", "emoji": "🎯" },
+      { "texto": "¡INCREÍBLE! Eres el Einstein del futuro (ﾉ´ヮ`)ﾉ*: ･ﾟ", "emoji": "🎯" },
       { "texto": "¡BRILLANTE! Tu cerebro está en modo Ultra Pro Max (◕‿◕)♡", "emoji": "🧠" },
       { "texto": "¡GENIAL! Hasta ChatGPT te tiene envidia ⊂((・▽・))⊃", "emoji": "🤖" },
       { "texto": "¡BESTIAL! Ni el Sharingan copia tan bien (｀∀´)Ψ", "emoji": "👁️" },
@@ -71,6 +74,16 @@
       { "texto": "¡Notas completas! ¿Ahora qué harás con tu vida? (｡♥‿♥｡)", "emoji": "🎮" },
       { "texto": "¡Ya está todo! Tu cerebro puede ir a modo vacaciones (◠‿◠✿)", "emoji": "🏖️" },
       { "texto": "¡Colección completa! Como mis excusas para no estudiar (•̀ᴗ•́)و", "emoji": "🏆" }
+    ],
+    "perdida_inasistencias": [
+      { "texto": "¡Felicidades por las notas! Lástima que tu silla te extrañaba tanto (╥﹏╥)", "emoji": "🪑" },
+      { "texto": "Buenas notas, pero tu asistencia fue más fantasma que mi ex (｡•́︿•̀｡)", "emoji": "👻" },
+      { "texto": "¡Genial en notas! Pero parece que tu cama ganó la batalla (◕︿◕✿)", "emoji": "🛏️" },
+      { "texto": "Cerebro: 100, Asistencia: -999... ¡Task failed successfully! (｀∀´)Ψ", "emoji": "🤯" },
+      { "texto": "Tu promedio: 'Am I a joke to you?' - Tus inasistencias: 'Yes' (╯°□°）╯", "emoji": "📊" },
+      { "texto": "Más ausente que Goku en la vida de Gohan... ¡pero con buenas notas! (；一_一)", "emoji": "🐉" },
+      { "texto": "Tus notas dicen Einstein, pero tu asistencia dice Houdini (◠‿◠✿)", "emoji": "🎩" },
+      { "texto": "Sacaste buenas notas... ¿Estudiabas mientras dormías? (｡•́‿•̀｡)", "emoji": "💤" }
     ]
   },
   "asistencia": {
@@ -132,13 +145,18 @@
       { "texto": "¡Nueva misión! Más difícil que explicarle a mamá el meme (＾▽＾)", "emoji": "👩" },
       { "texto": "¡Nueva quest desbloqueada! Dificultad: Dark Souls (⊙﹏⊙)", "emoji": "🎮" },
       { "texto": "¡Nueva tarea! Más difícil que encontrar las gemas del infinito (｀∀´)Ψ", "emoji": "💎" },
-      { "texto": "¡Tarea añadida! Tu vida social usó Substitute (◕‿◕)♡", "emoji": "🎮" }
+      { "texto": "¡Tarea añadida! Tu vida social usó Substitute (◕‿◕)♡", "emoji": "🎮" },
+      { "texto": "¡Nueva tarea! Más difícil que explicarle a mi abuela el WiFi (｡•́︿•̀｡)", "emoji": "👵" },
+      { "texto": "¡Tarea agregada! Tu cama acaba de llorar (◕︿◕)", "emoji": "🛏️" },
+      { "texto": "¡Nueva misión! Dificultad: Modo Elden Ring (⊙﹏⊙)", "emoji": "⚔️" }
     ],
     "completada": [
       { "texto": "¡Tarea completada! ¡Netflix, allá voy! ヽ(>∀<☆)ノ", "emoji": "🎉" },
       { "texto": "¡Terminaste! Ahora sí, ¡a procrastinar! (◕‿◕)♡", "emoji": "🎮" },
       { "texto": "¡Lo lograste! Tu cama te extrañaba (ﾉ◕ヮ◕)ﾉ*:･ﾟ✧", "emoji": "🛏️" },
-      { "texto": "¡Tarea entregada! Eres libre... hasta la próxima (•̀ᴗ•́)و", "emoji": "🦋" }
+      { "texto": "¡Tarea entregada! Eres libre... hasta la próxima (•̀ᴗ•́)و", "emoji": "🦋" },
+      { "texto": "¡Victoria Royale! La tarea ha sido derrotada (ﾉ◕ヮ◕)ﾉ*:･ﾟ✧", "emoji": "👑" },
+      { "texto": "¡GG EZ! La tarea no fue rival para ti (｀∀´)Ψ", "emoji": "🎮" }
     ],
     "vencida": [
       { "texto": "Se te fue el tren... y la tarea (╥﹏╥)", "emoji": "🚂" },
@@ -153,7 +171,9 @@
       { "texto": "Tu tarea expiró como mis propósitos de año nuevo (｡•́︿•̀｡)", "emoji": "🗓️" },
       { "texto": "Más tarde que Goku llegando a pelear (╯°□°）╯", "emoji": "🐉" },
       { "texto": "Más vencida que mi suscripción de Crunchyroll (；一_一)", "emoji": "📺" },
-      { "texto": "Tu tarea usó Teletransportación... ¡No fue muy efectivo! (◠‿◠✿)", "emoji": "✨" }
+      { "texto": "Tu tarea usó Teletransportación... ¡No fue muy efectivo! (◠‿◠✿)", "emoji": "✨" },
+      { "texto": "Más tarde que yo despertando en vacaciones (╯°□°）╯", "emoji": "⏰" },
+      { "texto": "Tu tarea expiró como mi motivación en lunes (｡•́︿•̀｡)", "emoji": "📅" }
     ],
     "tiempo_pasado": [
       { "texto": "¿Tienes una máquina del tiempo o qué? ¡No puedes crear tareas en el pasado! (╯°□°）╯", "emoji": "⏰" },
@@ -163,7 +183,19 @@
       { "texto": "Lo siento, mi flux capacitor está en el taller (¬‿¬)", "emoji": "🛠️" },
       { "texto": "¿También quieres comprar Bitcoin en 2010? (╥﹏╥)", "emoji": "📉" },
       { "texto": "Viaje al pasado denegado... ¡Gracias Terminator! (；一_一)", "emoji": "🤖" },
-      { "texto": "Error 404: Máquina del tiempo no encontrada (◠‿◠✿)", "emoji": "⚡" }
+      { "texto": "Error 404: Máquina del tiempo no encontrada (◠‿◠✿)", "emoji": "⚡" },
+      { "texto": "¿Intentando viajar al pasado? ¡Ni Doraemon puede ayudarte! (｡•́︿•̀｡)", "emoji": "🎒" },
+      { "texto": "¿Buscando las esferas del dragón para volver al pasado? (｀∀´)Ψ", "emoji": "🐉" }
+    ],
+    "descartada": [
+      { "texto": "Tarea descartada más rápido que mis propósitos de año nuevo (╯°□°）╯", "emoji": "🗑️" },
+      { "texto": "¡Adiós tarea! Te uniste al club de mis sueños frustrados (｡•́︿•̀｡)", "emoji": "👋" },
+      { "texto": "Tarea eliminada con la misma facilidad que mis excusas (◠‿◠✿)", "emoji": "✨" },
+      { "texto": "Tu tarea se fue a un mejor lugar... ¡la papelera! (｀∀´)Ψ", "emoji": "🚮" },
+      { "texto": "Tarea descartada con el poder de la procrastinación (⊙﹏⊙)", "emoji": "💫" },
+      { "texto": "¡Sayonara! Nos vemos en otra vida (◕‿◕)♡", "emoji": "🌸" },
+      { "texto": "Tarea ha usado 'Autodestrucción'... ¡Es super efectivo! (╯°□°）╯", "emoji": "💥" },
+      { "texto": "Tu tarea acaba de hacer un Isekai a otro mundo (｀∀´)Ψ", "emoji": "🌈" }
     ]
   },
   "materias": {
@@ -188,7 +220,7 @@
       { "texto": "¡Adelante! Tu cerebro es como Twitter: ¡siempre activo! (◠‿◠✿)", "emoji": "🐦" },
       { "texto": "¡Plus Ultra! Tu determinación supera a la de Midoriya (•̀ᴗ•́)و", "emoji": "💪" },
       { "texto": "¡No te rindas! Hasta Magikarp evolucionó (◕‿◕)♡", "emoji": "🐟" },
-      { "texto": "¡Ánimo! Más persistente que Naruto persiguiendo a Sasuke (��∀´)Ψ", "emoji": "🍜" }
+      { "texto": "¡Ánimo! Más persistente que Naruto persiguiendo a Sasuke (∀´)Ψ", "emoji": "🍜" }
     ],
     "estudio": [
       { "texto": "Estudiar es como el gym, duele pero funciona (╯°□°）╯︵ ┻━┻", "emoji": "💪" },
@@ -210,7 +242,10 @@
       { "texto": "Error 418: Soy una tetera... y tú un dormilón (；一_一)", "emoji": "🫖" },
       { "texto": "¡Error! Más confuso que la trama de Steins;Gate (×﹏×)", "emoji": "⚡" },
       { "texto": "Sistema.exe ha usado Confusión... ¡Es super efectivo! (｀∀´)Ψ", "emoji": "💫" },
-      { "texto": "Error más grande que la frente de Sakura (╯°□°）╯", "emoji": "🌸" }
+      { "texto": "Error más grande que la frente de Sakura (╯°□°）╯", "emoji": "🌸" },
+      { "texto": "Error: Tu cerebro está jugando Among Us (╯°□°）╯", "emoji": "🚀" },
+      { "texto": "¡Error! Más perdido que mi dignidad en finales (×﹏×)", "emoji": "📚" },
+      { "texto": "Sistema corrupto como mis archivos de la tesis (｡•́︿•̀｡)", "emoji": "💾" }
     ],
     "borradoTotal": [
       { "texto": "¡Poof! Todo se fue como mis ganas de estudiar (╥﹏╥)", "emoji": "💨" },
@@ -218,7 +253,7 @@
       { "texto": "Todo limpio, como mi historial de navegación (｡•́‿•̀｡)", "emoji": "🧹" }
     ],
     "cambio_imagen": [
-      { "texto": "¡Nueva foto! ¿Saliste más kawaii que antes? (◕‿◕)♡", "emoji": "📸" },
+      { "texto": "¡Nueva foto! ¿Saliste más lindo que antes? (◕‿◕)♡", "emoji": "📸" },
       { "texto": "¡Selfie mode activated! ¡Te ves genial! (｡♥‿♥｡)", "emoji": "🤳" },
       { "texto": "¡Nueva imagen! ¿Usaste filtros? ¡Pillín! (￣ω￣;)", "emoji": "📷" }
     ],
@@ -234,6 +269,13 @@
       { "texto": "¡Cambios guardados! ¡Me encanta! (｡♥‿♥｡)", "emoji": "🌟" },
       { "texto": "¡Nueva identidad desbloqueada! (＾▽＾)", "emoji": "🎭" },
       { "texto": "¡Perfil renovado! ¡Como después de un makeover! (◠‿◠✿)", "emoji": "💅" }
+    ],
+    "sin_materias": [
+      { "texto": "¡Ups! No puedes crear tareas sin materias... ¿O acaso estudias el arte de no estudiar? (￣ω￣;)", "emoji": "📚" },
+      { "texto": "¡Hey! Primero necesitas materias... ¡No puedes tener tarea de la nada! (｡•́︿•̀｡)", "emoji": "✏️" },
+      { "texto": "¿Tarea sin materias? Eso es como un sandwich sin pan (╯°□°）╯", "emoji": "🥪" },
+      { "texto": "¡Necesitas agregar materias primero! No puedes procrastinar en el vacío (◠‿◠✿)", "emoji": "⚠️" },
+      { "texto": "¿Tarea de qué? ¿Del club de la procrastinación? ¡Agrega materias primero! (｀∀´)Ψ", "emoji": "📝" }
     ]
   },
   "logros": {

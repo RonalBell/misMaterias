@@ -869,9 +869,9 @@
                         ✨ Estudiante-chan ✨
                     </h6>
                     <div class="d-flex align-items-center justify-content-center gap-2 mt-1">
-                        <select id="semestreSelector" class="form-select form-select-sm" style="width: auto;">
+                        <span class="badge bg-kawaii" id="semestreActualIndicador">
                             <!-- Se llenará dinámicamente -->
-                        </select>
+                        </span>
                         <button class="btn btn-kawaii btn-sm p-1" onclick="gestorMaterias.mostrarModalSemestres()">
                             ⚙️
                         </button>
@@ -983,40 +983,70 @@
                             <input type="text" class="form-control" id="profesorMateria" required>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Horario</label>
-                            <input type="text" class="form-control" id="horarioMateria" placeholder="Ej: Lunes y Miércoles 10:00-12:00" required>
+                            <label class="form-label">Límite de Inasistencias</label>
+                            <input type="number" class="form-control" id="limiteInasistencias" min="1" value="3" required>
                         </div>
+                        
                         <div class="mb-3">
-                            <label class="form-label">Aula</label>
-                            <input type="text" class="form-control" id="aulaMateria" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Créditos</label>
-                            <input type="number" class="form-control" id="creditosMateria" min="1" max="10" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Límite de Inasistencias (%)</label>
-                            <input type="number" class="form-control" id="limiteInasistencias" min="0" max="100" value="20" required>
-                        </div>
-                        <div class="mb-3">
-                            <h6>Ponderaciones de Evaluación</h6>
-                            <div id="ponderaciones">
-                                <div class="row ponderacion-item mb-2">
-                                    <div class="col-5">
-                                        <input type="text" class="form-control" placeholder="Nombre" required>
-                                    </div>
-                                    <div class="col-5">
-                                        <input type="number" class="form-control" placeholder="%" min="0" max="100" required>
-                                    </div>
-                                    <div class="col-2">
-                                        <button type="button" class="btn btn-danger btn-sm" onclick="eliminarPonderacion(this)">×</button>
+                            <label class="form-label">Horarios</label>
+                            <div id="horariosContainer">
+                                <div class="horario-item mb-2 p-2 border rounded">
+                                    <div class="row g-2">
+                                        <div class="col-md-4">
+                                            <select class="form-select dia-select" required>
+                                                <option value="">Día</option>
+                                                <option value="Lunes">Lunes</option>
+                                                <option value="Martes">Martes</option>
+                                                <option value="Miércoles">Miércoles</option>
+                                                <option value="Jueves">Jueves</option>
+                                                <option value="Viernes">Viernes</option>
+                                                <option value="Sábado">Sábado</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-8">
+                                            <div class="row g-2">
+                                                <div class="col-6">
+                                                    <input type="time" class="form-control hora-inicio" required>
+                                                </div>
+                                                <div class="col-6">
+                                                    <input type="time" class="form-control hora-fin" required>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-12 mt-2">
+                                            <input type="text" class="form-control aula" placeholder="Aula" required>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                            <button type="button" class="btn btn-secondary btn-sm mt-2" onclick="agregarPonderacion()">+ Agregar Ponderación</button>
-                            <div class="text-muted small mt-1">La suma debe ser 100%</div>
+                            <button type="button" class="btn btn-kawaii btn-sm mt-2" onclick="gestorMaterias.agregarHorario()">
+                                + Agregar otro horario
+                            </button>
                         </div>
-                        <button type="submit" class="btn btn-primary">Guardar Materia</button>
+
+                        <div class="mb-3">
+                            <label class="form-label">Ponderaciones</label>
+                            <div id="ponderacionesContainer">
+                                <div class="ponderacion-item mb-2 p-2 border rounded">
+                                    <div class="row g-2">
+                                        <div class="col-8">
+                                            <input type="text" class="form-control" placeholder="Nombre de la evaluación" required>
+                                        </div>
+                                        <div class="col-4">
+                                            <input type="number" class="form-control" placeholder="%" min="0" max="100" required>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-kawaii btn-sm mt-2" onclick="gestorMaterias.agregarPonderacion()">
+                                + Agregar ponderación
+                            </button>
+                            <small class="text-muted d-block mt-1">La suma debe ser 100%</small>
+                        </div>
+
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-kawaii">Guardar Materia</button>
+                        </div>
                     </form>
                 </div>
             </div>
@@ -1096,33 +1126,48 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Fecha y Hora de Entrega</label>
-                            <input type="datetime-local" class="form-control" id="fechaEntregaTarea" required>
+                            <div class="row g-2">
+                                <div class="col-md-7">
+                                    <input type="date" class="form-control" id="fechaEntregaTarea" required>
+                                </div>
+                                <div class="col-md-5">
+                                    <input type="time" class="form-control" id="horaEntregaTarea" required>
+                                </div>
+                            </div>
                         </div>
-                        <button type="submit" class="btn btn-primary">Guardar Tarea</button>
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-kawaii">Guardar Tarea</button>
+                        </div>
                     </form>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Agregar nuevo modal para gestión de semestres -->
+    <!-- Modificar el Modal para gestión de semestres -->
     <div class="modal fade" id="modalSemestres" tabindex="-1">
-        <div class="modal-dialog">
+        <div class="modal-dialog" style="max-width: 400px;">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Gestionar Semestres</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="formNuevoSemestre" class="mb-4">
-                        <div class="input-group mb-3">
+                    <form id="formNuevoSemestre" class="mb-3">
+                        <div class="input-group">
                             <input type="text" class="form-control" id="nombreSemestre" placeholder="Nombre del semestre" required>
                             <button class="btn btn-kawaii" type="submit">✨ Crear</button>
                         </div>
                     </form>
                     
+                    <div class="d-grid gap-2 mb-3">
+                        <button class="btn btn-kawaii" onclick="gestorMaterias.mostrarEstadisticasGenerales()">
+                            📊 Ver Estadísticas
+                        </button>
+                    </div>
+                    
                     <h6>Semestres Existentes</h6>
-                    <div class="list-group" id="listaSemestres">
+                    <div class="list-group" id="listaSemestres" style="max-height: 300px; overflow-y: auto;">
                         <!-- Se llenará dinámicamente -->
                     </div>
                 </div>
@@ -1195,6 +1240,79 @@
                     <button class="btn btn-kawaii w-100" onclick="gestorMaterias.guardarPerfil()">
                         ¡Guardar cambios! (｀∀´)Ψ
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Agregar nuevo modal para estadísticas generales -->
+    <div class="modal fade" id="modalEstadisticasGenerales" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Estadísticas Generales</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" style="max-height: 80vh; overflow-y: auto;">
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header py-2">Promedio Acumulado</div>
+                                <div class="card-body text-center">
+                                    <h3 class="mb-0">
+                                        <span class="badge" id="promedioAcumuladoTotal">
+                                            <!-- Se llenará dinámicamente -->
+                                        </span>
+                                    </h3>
+                                    <small class="text-muted">Promedio de todos los semestres</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header py-2">Promedio por Semestre</div>
+                                <div class="card-body" style="height: 200px;">
+                                    <canvas id="graficoPromediosSemestres"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header py-2">Materias por Semestre</div>
+                                <div class="card-body" style="height: 200px;">
+                                    <canvas id="graficoMateriasSemestres"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">Resumen General</div>
+                                <div class="card-body p-0">
+                                    <div class="table-responsive" style="max-height: 200px;">
+                                        <table class="table table-sm table-hover mb-0">
+                                            <thead class="sticky-top bg-white">
+                                                <tr>
+                                                    <th style="width: 20%">Semestre</th>
+                                                    <th style="width: 15%">Promedio</th>
+                                                    <th style="width: 15%">Materias</th>
+                                                    <th style="width: 15%">Aprobadas</th>
+                                                    <th style="width: 15%">Reprobadas</th>
+                                                    <th style="width: 20%">Estado</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="tablaResumenSemestres">
+                                                <!-- Se llenará dinámicamente -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

@@ -265,15 +265,27 @@ class GestorMaterias {
         }
     }
 
-    cambiarSemestre(id) {
-        if (id && id !== this.semestreActual) {
-            this.semestreActual = id;
-            localStorage.setItem('semestreActual', id);
+    cambiarSemestre(semestre) {
+        // Desactivar el semestre actual anterior
+        this.semestres.forEach(s => s.activo = false);
+        
+        // Activar el nuevo semestre actual
+        const nuevoSemestreActual = this.semestres.find(s => s.id === semestre.id);
+        if (nuevoSemestreActual) {
+            nuevoSemestreActual.activo = true;
+            this.semestreActual = semestre.id;
+            
+            // Guardar cambios y actualizar todo
+            this.guardarSemestres();
             this.cargarMaterias();
             this.actualizarGraficos();
             this.actualizarTareas();
             this.mostrarKawaiiToast('semestre', 'cambio');
         }
+        
+        // Cerrar el modal de semestres
+        const modalSemestres = bootstrap.Modal.getInstance(document.getElementById('modalSemestres'));
+        if (modalSemestres) modalSemestres.hide();
     }
 
     guardarSemestres() {
@@ -284,6 +296,12 @@ class GestorMaterias {
     cargarMaterias() {
         const semestreActual = this.semestres.find(s => s.id === this.semestreActual);
         if (!semestreActual) return;
+
+        // Actualizar el indicador de semestre actual
+        const indicadorSemestre = document.getElementById('semestreActualIndicador');
+        if (indicadorSemestre) {
+            indicadorSemestre.textContent = semestreActual.nombre;
+        }
 
         const listaMaterias = document.getElementById('listaMaterias');
         const tbody = document.getElementById('tablaMaterias');
@@ -400,7 +418,15 @@ class GestorMaterias {
                                 ${(() => {
                                     const promedio = this.calcularPromedio(materia);
                                     if (promedio.perdidaPorFaltas) {
-                                        return '<span class="text-danger">Perdida por faltas</span>';
+                                        return `
+                                            <span class="text-danger">Perdida por faltas</span>
+                                            ${promedio.promedioOriginal >= 3.0 ? 
+                                                `<small class="text-muted d-block">
+                                                    (Tenías ${promedio.promedioOriginal} de promedio 😢)
+                                                </small>` : 
+                                                ''
+                                            }
+                                        `;
                                     }
                                     return `
                                         <div>${promedio.valor} 
@@ -467,23 +493,30 @@ class GestorMaterias {
         if (formNuevaMateria) {
             formNuevaMateria.addEventListener('submit', (e) => {
                 e.preventDefault();
+                
                 const nombre = document.getElementById('nombreMateria').value;
                 const profesor = document.getElementById('profesorMateria').value;
-                const horario = document.getElementById('horarioMateria').value;
-                const aula = document.getElementById('aulaMateria').value;
-                const creditos = document.getElementById('creditosMateria').value;
                 const limiteInasistencias = document.getElementById('limiteInasistencias').value;
-                const ponderaciones = Array.from(document.querySelectorAll('.ponderacion-item')).map(item => {
-                    const nombre = item.querySelector('input[placeholder="Nombre"]').value;
-                    const porcentaje = item.querySelector('input[placeholder="%"]').value;
-                    return { nombre, porcentaje };
-                });
                 
-                this.agregarMateria(nombre, profesor, horario, aula, creditos, limiteInasistencias, ponderaciones);
-                
-                const modal = bootstrap.Modal.getInstance(document.getElementById('modalNuevaMateria'));
-                if (modal) modal.hide();
-                e.target.reset();
+                // Recolectar horarios
+                const horarios = Array.from(document.querySelectorAll('#horariosContainer .horario-item')).map(item => ({
+                    dia: item.querySelector('select').value,
+                    horaInicio: item.querySelector('.hora-inicio').value,
+                    horaFin: item.querySelector('.hora-fin').value,
+                    aula: item.querySelector('.aula').value
+                }));
+
+                // Recolectar ponderaciones
+                const ponderaciones = Array.from(document.querySelectorAll('.ponderacion-item')).map(item => ({
+                    nombre: item.querySelector('input[placeholder="Nombre de la evaluación"]').value,
+                    porcentaje: parseInt(item.querySelector('input[placeholder="%"]').value)
+                }));
+
+                if (this.agregarMateria(nombre, profesor, limiteInasistencias, horarios, ponderaciones)) {
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('modalNuevaMateria'));
+                    if (modal) modal.hide();
+                    e.target.reset();
+                }
             });
         }
 
@@ -499,10 +532,6 @@ class GestorMaterias {
                 const fecha = document.getElementById('fechaNota').value;
                 
                 this.guardarNota(materiaId, descripcion, valor, fecha, tipoPonderacion);
-                
-                const modal = bootstrap.Modal.getInstance(document.getElementById('modalNuevaNota'));
-                if (modal) modal.hide();
-                e.target.reset();
             });
         }
 
@@ -514,34 +543,27 @@ class GestorMaterias {
                 const materiaId = document.getElementById('materiaIdTarea').value;
                 const descripcion = document.getElementById('descripcionTarea').value;
                 const fechaEntrega = document.getElementById('fechaEntregaTarea').value;
+                const horaEntrega = document.getElementById('horaEntregaTarea').value;
                 
-                if (this.agregarTarea(materiaId, descripcion, fechaEntrega)) {
-                    this.mostrarKawaiiToast('tareas', 'nueva');
+                if (this.agregarTarea(materiaId, descripcion, fechaEntrega, horaEntrega)) {
                     const modal = bootstrap.Modal.getInstance(document.getElementById('modalNuevaTarea'));
                     if (modal) modal.hide();
                     e.target.reset();
                 }
             });
         }
-
-        // Agregar listeners para limpiar modales al cerrar
-        document.querySelectorAll('.modal').forEach(modal => {
-            modal.addEventListener('hidden.bs.modal', () => {
-                this.limpiarModales();
-            });
-        });
     }
 
-    agregarMateria(nombre, profesor, horario, aula, creditos, limiteInasistencias, ponderaciones) {
-        // Convertir los porcentajes a números
-        const ponderacionesNum = ponderaciones.map(p => ({
-            nombre: p.nombre,
-            porcentaje: parseInt(p.porcentaje)
-        }));
-
+    agregarMateria(nombre, profesor, limiteInasistencias, horarios, ponderaciones) {
         // Validar que las ponderaciones sumen 100%
-        const sumaPonderaciones = ponderacionesNum.reduce((sum, p) => sum + p.porcentaje, 0);
+        const sumaPonderaciones = ponderaciones.reduce((sum, p) => sum + parseInt(p.porcentaje), 0);
         if (sumaPonderaciones !== 100) {
+            this.mostrarKawaiiToast('sistema', 'error');
+            return false;
+        }
+
+        // Validar que haya al menos un horario
+        if (!horarios || horarios.length === 0) {
             this.mostrarKawaiiToast('sistema', 'error');
             return false;
         }
@@ -550,14 +572,11 @@ class GestorMaterias {
             id: Date.now().toString(),
             nombre,
             profesor,
-            horario,
-            aula,
-            creditos: parseInt(creditos),
             limiteInasistencias: parseInt(limiteInasistencias),
-            ponderaciones: ponderacionesNum,
+            horarios, // Ahora es un array de objetos {dia, horaInicio, horaFin, aula}
+            ponderaciones,
             notas: [],
             inasistencias: [],
-            asistencia: 100,
             fechaCreacion: new Date().toISOString()
         };
 
@@ -580,13 +599,59 @@ class GestorMaterias {
         const materia = semestreActual.materias.find(m => m.id === materiaId);
         if (!materia) return;
 
+        const promedio = this.calcularPromedio(materia);
+        let promedioHTML = '';
+
+        if (promedio.perdidaPorFaltas) {
+            promedioHTML = `
+                <div class="alert alert-danger">
+                    <strong>Materia perdida por faltas</strong>
+                    ${promedio.promedioOriginal >= 3.0 ? 
+                        `<br><small>(Tenías ${promedio.promedioOriginal} de promedio 😢)</small>` : 
+                        ''
+                    }
+                </div>
+            `;
+        } else {
+            promedioHTML = `
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <strong>Promedio:</strong>
+                    <button class="btn btn-kawaii btn-sm" 
+                            onclick="gestorMaterias.mostrarComentarioPromedio(${promedio.valor})">
+                        ${promedio.valor}
+                    </button>
+                </div>
+            `;
+        }
+
         const detallesHTML = `
             <h4>Detalles de ${materia.nombre}</h4>
             <p><strong>Profesor:</strong> ${materia.profesor}</p>
-            <p><strong>Horario:</strong> ${materia.horario}</p>
-            <p><strong>Aula:</strong> ${materia.aula}</p>
-            <p><strong>Créditos:</strong> ${materia.creditos}</p>
-            <p><strong>Promedio Actual:</strong> ${this.calcularPromedio(materia)}</p>
+            ${promedioHTML}
+            
+            <h5>Horarios:</h5>
+            <div class="table-responsive mb-3">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Día</th>
+                            <th>Hora Inicio</th>
+                            <th>Hora Fin</th>
+                            <th>Aula</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${materia.horarios.map(horario => `
+                            <tr>
+                                <td>${horario.dia}</td>
+                                <td>${horario.horaInicio}</td>
+                                <td>${horario.horaFin}</td>
+                                <td>${horario.aula}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
             
             <h5>Ponderaciones y Notas:</h5>
             <div class="table-responsive">
@@ -736,13 +801,32 @@ class GestorMaterias {
                 fecha,
                 tipoPonderacion
             });
+        }
+
+        // Verificar si esta es la última nota requerida
+        const todasLasNotasRegistradas = materia.ponderaciones.every(ponderacion => 
+            materia.notas.some(nota => nota.tipoPonderacion === ponderacion.nombre)
+        );
+
+        if (todasLasNotasRegistradas) {
+            // Calcular promedio final
+            const promedio = this.calcularPromedio(materia);
             
-            if (valorNota >= 4.0) {
-                this.mostrarKawaiiToast('notas', 'alta');
-            } else if (valorNota >= 3.0) {
-                this.mostrarKawaiiToast('notas', 'nueva');
-            } else {
-                this.mostrarKawaiiToast('notas', 'baja');
+            // Si está perdida por faltas, ya se muestra ese mensaje en calcularPromedio
+            if (!promedio.perdidaPorFaltas) {
+                setTimeout(() => {
+                    if (promedio.valor === 5.0) {
+                        this.mostrarKawaiiToast('notas', 'perfecta');
+                    } else if (promedio.valor >= 4.5) {
+                        this.mostrarKawaiiToast('notas', 'alta');
+                    } else if (promedio.valor >= 3.0) {
+                        this.mostrarKawaiiToast('notas', 'buena');
+                    } else if (promedio.valor >= 2.5) {
+                        this.mostrarKawaiiToast('notas', 'regular');
+                    } else {
+                        this.mostrarKawaiiToast('notas', 'baja');
+                    }
+                }, 1000);
             }
         }
         
@@ -819,27 +903,36 @@ class GestorMaterias {
             return { valor: 0, porcentajeCompletado: 0 };
         }
         
-        // Verificar si está perdida por inasistencias
-        if (this.calcularInasistencias(materia) > materia.limiteInasistencias) {
-            return { valor: 0, porcentajeCompletado: 100, perdidaPorFaltas: true };
-        }
-
+        // Calcular el promedio real primero
         let notaAcumulada = 0;
         let sumaPorcentajesUsados = 0;
 
         materia.ponderaciones.forEach(ponderacion => {
             const nota = materia.notas.find(n => n.tipoPonderacion === ponderacion.nombre);
             if (nota) {
-                // Calcular el valor real según la ponderación
                 notaAcumulada += (parseFloat(nota.valor) * ponderacion.porcentaje) / 100;
                 sumaPorcentajesUsados += ponderacion.porcentaje;
             }
         });
 
+        const promedioReal = parseFloat(notaAcumulada.toFixed(1));
+        
+        // Verificar si está perdida por inasistencias
+        if (this.calcularInasistencias(materia) > materia.limiteInasistencias) {
+            // Si tenía buen promedio pero perdió por inasistencias, mostrar mensaje gracioso
+            if (promedioReal >= 3.0) {
+                this.mostrarKawaiiToast('notas', 'perdida_inasistencias');
+            }
+            return { 
+                valor: 0, 
+                porcentajeCompletado: 100, 
+                perdidaPorFaltas: true,
+                promedioOriginal: promedioReal // Guardamos el promedio original
+            };
+        }
+
         return {
-            // La nota acumulada es la suma de (nota * porcentaje/100)
-            valor: parseFloat(notaAcumulada.toFixed(1)),
-            // El porcentaje completado es la suma de los porcentajes de las notas registradas
+            valor: promedioReal,
             porcentajeCompletado: sumaPorcentajesUsados
         };
     }
@@ -862,12 +955,12 @@ class GestorMaterias {
         return materiasConNota > 0 ? parseFloat((sumaPromedios / materiasConNota).toFixed(1)) : 0;
     }
 
-    agregarTarea(materiaId, descripcion, fechaEntrega) {
-        const fechaLimite = new Date(fechaEntrega);
-        const fechaHoy = new Date();
+    agregarTarea(materiaId, descripcion, fechaEntrega, horaEntrega) {
+        const fechaHoraEntrega = new Date(`${fechaEntrega}T${horaEntrega}`);
+        const ahora = new Date();
 
         // Verificar si la fecha es en el pasado
-        if (fechaLimite < fechaHoy) {
+        if (fechaHoraEntrega < ahora) {
             this.mostrarKawaiiToast('tareas', 'tiempo_pasado');
             return false;
         }
@@ -885,7 +978,7 @@ class GestorMaterias {
             semestreNombre: semestreActual.nombre,
             materiaNombre: materia.nombre,
             descripcion,
-            fechaEntrega,
+            fechaEntrega: fechaHoraEntrega.toISOString(),
             fechaCreacion: new Date().toISOString(),
             estado: 'pendiente',
             completadaEn: null
@@ -905,32 +998,16 @@ class GestorMaterias {
         listaTareas.innerHTML = '';
         const ahora = new Date();
 
-        // Verificar tareas vencidas sin descartar automáticamente
-        this.tareas.forEach(tarea => {
-            if (tarea.estado === 'pendiente') {
-                const fechaEntrega = new Date(tarea.fechaEntrega);
-                // Comparar solo las fechas sin la hora
-                const fechaHoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
-                const fechaLimite = new Date(fechaEntrega.getFullYear(), fechaEntrega.getMonth(), fechaEntrega.getDate());
-                
-                if (fechaLimite < fechaHoy) {
-                    tarea.estado = 'vencida';
-                    tarea.completadaEn = new Date().toISOString();
-                    this.mostrarKawaiiToast('tareas', 'vencida');
-                }
-            }
-        });
-        this.guardarTareas();
-
-        // Filtrar y mostrar tareas pendientes
-        const tareasPendientes = this.tareas
+        // Filtrar tareas pendientes y vencidas sin descartar
+        const tareasActivas = this.tareas
             .filter(tarea => 
                 tarea.semestreId === this.semestreActual && 
-                tarea.estado === 'pendiente'
+                tarea.estado !== 'completada' && 
+                tarea.estado !== 'descartada'
             )
             .sort((a, b) => new Date(a.fechaEntrega) - new Date(b.fechaEntrega));
 
-        if (tareasPendientes.length === 0) {
+        if (tareasActivas.length === 0) {
             listaTareas.innerHTML = `
                 <div class="text-center text-muted p-3">
                     No hay tareas pendientes (◠‿◠)
@@ -939,26 +1016,34 @@ class GestorMaterias {
             return;
         }
 
-        tareasPendientes.forEach(tarea => {
+        tareasActivas.forEach(tarea => {
             const fechaEntrega = new Date(tarea.fechaEntrega);
-            const fechaHoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
-            const fechaLimite = new Date(fechaEntrega.getFullYear(), fechaEntrega.getMonth(), fechaEntrega.getDate());
-            
-            // Calcular días restantes comparando solo fechas sin hora
-            const tiempoRestante = fechaLimite - fechaHoy;
+            const tiempoRestante = fechaEntrega.getTime() - ahora.getTime();
+            const estaVencida = tiempoRestante < 0;
             const diasRestantes = Math.ceil(tiempoRestante / (1000 * 60 * 60 * 24));
+            const horasRestantes = Math.ceil(tiempoRestante / (1000 * 60 * 60));
             
             let estadoTarea = '';
-            if (diasRestantes === 0) {
-                estadoTarea = '<span class="text-warning ms-2">¡Vence hoy!</span>';
-            } else if (diasRestantes === 1) {
-                estadoTarea = '<span class="text-warning ms-2">¡Vence mañana!</span>';
-            } else if (diasRestantes > 1) {
+            let claseCard = '';
+
+            if (estaVencida) {
+                estadoTarea = '<span class="text-danger ms-2">VENCIDA!</span>';
+                claseCard = 'border-danger bg-danger bg-opacity-10';
+            } else if (horasRestantes <= 24) {
+                claseCard = 'border-warning';
+                if (horasRestantes <= 1) {
+                    estadoTarea = '<span class="text-danger ms-2">¡Menos de 1 hora!</span>';
+                } else if (horasRestantes <= 3) {
+                    estadoTarea = `<span class="text-danger ms-2">¡${horasRestantes} horas restantes!</span>`;
+                } else {
+                    estadoTarea = `<span class="text-warning ms-2">��${horasRestantes} horas restantes!</span>`;
+                }
+            } else {
                 estadoTarea = `<span class="ms-2">(${diasRestantes} días restantes)</span>`;
             }
 
             listaTareas.innerHTML += `
-                <div class="tarea-card ${diasRestantes <= 1 ? 'border-warning' : ''}">
+                <div class="tarea-card ${claseCard}">
                     <div class="d-flex justify-content-between align-items-start mb-2">
                         <h6 class="mb-0">📚 ${tarea.materiaNombre}</h6>
                         <div class="btn-group">
@@ -994,11 +1079,11 @@ class GestorMaterias {
     descartarTarea(tareaId) {
         const tarea = this.tareas.find(t => t.id === tareaId);
         if (tarea) {
-            tarea.estado = 'vencida';
+            tarea.estado = 'descartada';
             tarea.completadaEn = new Date().toISOString();
             this.guardarTareas();
             this.actualizarTareas();
-            this.mostrarKawaiiToast('tareas', 'vencida');
+            this.mostrarKawaiiToast('tareas', 'descartada');
         }
     }
 
@@ -1012,8 +1097,8 @@ class GestorMaterias {
             t.estado === 'completada' && 
             t.semestreId === this.semestreActual
         );
-        const tareasVencidas = this.tareas.filter(t => 
-            t.estado === 'vencida' && 
+        const tareasDescartadas = this.tareas.filter(t => 
+            t.estado === 'descartada' && 
             t.semestreId === this.semestreActual
         );
 
@@ -1046,8 +1131,8 @@ class GestorMaterias {
             renderizarTareas(tareasCompletadas) : 
             '<div class="text-center p-3">No hay tareas completadas</div>';
 
-        vencidas.innerHTML = tareasVencidas.length ? 
-            renderizarTareas(tareasVencidas) : 
+        vencidas.innerHTML = tareasDescartadas.length ? 
+            renderizarTareas(tareasDescartadas) : 
             '<div class="text-center p-3">No hay tareas vencidas</div>';
 
         // Mostrar modal
@@ -1073,8 +1158,17 @@ class GestorMaterias {
     mostrarModalNuevaTarea() {
         this.limpiarModales();
         const semestreActual = this.semestres.find(s => s.id === this.semestreActual);
-        if (!semestreActual || !semestreActual.materias.length) {
-            this.mostrarKawaiiToast('sistema', 'error');
+        
+        // Verificar si hay materias
+        if (!semestreActual || !semestreActual.materias || semestreActual.materias.length === 0) {
+            this.mostrarKawaiiToast('sistema', 'sin_materias');
+            
+            // Esperar un momento y luego mostrar el modal de nueva materia
+            setTimeout(() => {
+                const modalNuevaMateria = new bootstrap.Modal(document.getElementById('modalNuevaMateria'));
+                modalNuevaMateria.show();
+            }, 2000);
+            
             return;
         }
 
@@ -1088,7 +1182,77 @@ class GestorMaterias {
             selectMateria.appendChild(option);
         });
 
+        // Establecer fecha y hora mínima como ahora
+        const ahora = new Date();
+        const fechaInput = document.getElementById('fechaEntregaTarea');
+        const horaInput = document.getElementById('horaEntregaTarea');
+        
+        // Formatear fecha y hora actual
+        const fechaMinima = ahora.toISOString().split('T')[0];
+        const horaActual = ahora.toTimeString().split(':').slice(0,2).join(':');
+        
+        // Establecer valores mínimos y por defecto
+        fechaInput.value = fechaMinima;
+        horaInput.value = horaActual;
+
         new bootstrap.Modal(document.getElementById('modalNuevaTarea')).show();
+    }
+
+    agregarHorario() {
+        const container = document.getElementById('horariosContainer');
+        const horarioDiv = document.createElement('div');
+        horarioDiv.className = 'horario-item mb-2 p-2 border rounded';
+        horarioDiv.innerHTML = `
+            <div class="row g-2">
+                <div class="col-md-4">
+                    <select class="form-select dia-select" required>
+                        <option value="">Día</option>
+                        <option value="Lunes">Lunes</option>
+                        <option value="Martes">Martes</option>
+                        <option value="Miércoles">Miércoles</option>
+                        <option value="Jueves">Jueves</option>
+                        <option value="Viernes">Viernes</option>
+                        <option value="Sábado">Sábado</option>
+                    </select>
+                </div>
+                <div class="col-md-8">
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <input type="time" class="form-control hora-inicio" required>
+                        </div>
+                        <div class="col-6">
+                            <input type="time" class="form-control hora-fin" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 mt-2">
+                    <input type="text" class="form-control aula" placeholder="Aula" required>
+                </div>
+            </div>
+        `;
+        container.appendChild(horarioDiv);
+    }
+
+    agregarPonderacion() {
+        const container = document.getElementById('ponderacionesContainer');
+        const ponderacionDiv = document.createElement('div');
+        ponderacionDiv.className = 'ponderacion-item mb-2 p-2 border rounded';
+        ponderacionDiv.innerHTML = `
+            <div class="row g-2">
+                <div class="col-8">
+                    <input type="text" class="form-control" placeholder="Nombre de la evaluación" required>
+                </div>
+                <div class="col-4">
+                    <input type="number" class="form-control" placeholder="%" min="0" max="100" required>
+                </div>
+                <div class="col-12 mt-2 text-end">
+                    <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.ponderacion-item').remove()">
+                        × Eliminar ponderación
+                    </button>
+                </div>
+            </div>
+        `;
+        container.appendChild(ponderacionDiv);
     }
 
     guardarCambios() {
@@ -1142,7 +1306,7 @@ class GestorMaterias {
                     beginAtZero: true,
                     max: 5,
                     ticks: {
-                        stepSize: 0.5
+                        font: { size: 10 }
                     }
                 }
             },
@@ -1251,34 +1415,20 @@ class GestorMaterias {
 
     // Agregar este método a la clase GestorMaterias
     limpiarModales() {
-        // No limpiar si hay un modal activo que queremos mantener
-        const modalActivo = document.querySelector('.modal.show');
-        if (modalActivo && modalActivo.id === 'modalDetalles') {
-            // Si el modal de detalles está activo, mantener su backdrop
-            return;
-        }
-
-        // Remover modales y backdrops innecesarios
-        const modals = document.querySelectorAll('.modal');
-        modals.forEach(modal => {
-            if (modal.classList.contains('show') && modal.id !== 'modalDetalles') {
-                const modalInstance = bootstrap.Modal.getInstance(modal);
-                if (modalInstance) {
-                    modalInstance.hide();
-                }
+        document.querySelectorAll('.modal').forEach(modal => {
+            const instance = bootstrap.Modal.getInstance(modal);
+            if (instance) {
+                instance.hide();
             }
         });
-
-        // Limpiar backdrops solo si no hay modales activos
-        if (!document.querySelector('.modal.show')) {
-            const backdrops = document.querySelectorAll('.modal-backdrop');
-            backdrops.forEach(backdrop => backdrop.remove());
-            
-            // Restaurar el scroll y remover la clase modal-open del body
-            document.body.classList.remove('modal-open');
-            document.body.style.overflow = '';
-            document.body.style.paddingRight = '';
-        }
+        
+        document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+            backdrop.remove();
+        });
+        
+        document.body.classList.remove('modal-open');
+        document.body.style.removeProperty('padding-right');
+        document.body.style.removeProperty('overflow');
     }
 
     focusMateria(materiaId) {
@@ -1410,6 +1560,431 @@ class GestorMaterias {
             this.mostrarKawaiiToast('sistema', 'perfil_actualizado');
             bootstrap.Modal.getInstance(document.getElementById('modalEditarPerfil')).hide();
         }
+    }
+
+    actualizarListaTareas() {
+        const listaTareas = document.getElementById('listaTareas');
+        listaTareas.innerHTML = '';
+        
+        const ahora = new Date();
+        const tareas = this.obtenerTareas().sort((a, b) => new Date(a.fechaEntrega) - new Date(b.fechaEntrega));
+        
+        tareas.forEach(tarea => {
+            if (!tarea.completada) {
+                const fechaEntrega = new Date(tarea.fechaEntrega);
+                const estaVencida = fechaEntrega < ahora;
+                
+                const tareaElement = document.createElement('div');
+                tareaElement.className = `tarea-card ${estaVencida ? 'bg-danger bg-opacity-10' : ''}`;
+                
+                tareaElement.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>${tarea.materia}</strong>
+                            <div class="text-muted small">
+                                ${tarea.descripcion}
+                            </div>
+                            <div class="text-${estaVencida ? 'danger' : 'muted'} small">
+                                ${estaVencida ? '¡Vencida!' : ''} 
+                                Entrega: ${new Date(tarea.fechaEntrega).toLocaleString()}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                listaTareas.appendChild(tareaElement);
+            }
+        });
+        
+        if (listaTareas.children.length === 0) {
+            listaTareas.innerHTML = '<div class="text-center text-muted">¡No hay tareas pendientes! ✨</div>';
+        }
+    }
+
+    actualizarHistorialTareas() {
+        const tareasCompletadas = document.getElementById('tareasCompletadas');
+        const tareasVencidas = document.getElementById('tareasVencidas');
+        
+        const ahora = new Date();
+        const tareas = this.obtenerTareas().sort((a, b) => new Date(b.fechaEntrega) - new Date(a.fechaEntrega));
+        
+        let htmlCompletadas = '';
+        let htmlVencidas = '';
+        
+        tareas.forEach(tarea => {
+            const fechaEntrega = new Date(tarea.fechaEntrega);
+            const estaVencida = fechaEntrega < ahora;
+            
+            const tareaHTML = `
+                <div class="tarea-card mb-2 ${tarea.completada ? 'bg-success bg-opacity-10' : estaVencida ? 'bg-danger bg-opacity-10' : ''}">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>${tarea.materia}</strong>
+                            <div class="text-muted small">
+                                ${tarea.descripcion}
+                            </div>
+                            <div class="text-${estaVencida ? 'danger' : 'success'} small">
+                                ${tarea.completada ? '✅ Completada' : estaVencida ? '⚠️ No entregada' : 'Pendiente'}
+                                - Fecha: ${new Date(tarea.fechaEntrega).toLocaleString()}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            if (tarea.completada) {
+                htmlCompletadas += tareaHTML;
+            } else if (estaVencida) {
+                htmlVencidas += tareaHTML;
+            }
+        });
+        
+        tareasCompletadas.innerHTML = htmlCompletadas || '<div class="text-center text-muted">No hay tareas completadas</div>';
+        tareasVencidas.innerHTML = htmlVencidas || '<div class="text-center text-muted">No hay tareas vencidas</div>';
+    }
+
+    // Agregar este nuevo método para mostrar el modal de nueva materia
+    mostrarModalNuevaMateria() {
+        this.limpiarModales();
+        const modalBody = document.querySelector('#modalNuevaMateria .modal-body');
+        
+        modalBody.innerHTML = `
+            <form id="formNuevaMateria">
+                <div class="mb-3">
+                    <label class="form-label">Nombre de la materia</label>
+                    <input type="text" class="form-control" id="nombreMateria" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Profesor</label>
+                    <input type="text" class="form-control" id="profesorMateria" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Límite de inasistencias</label>
+                    <input type="number" class="form-control" id="limiteInasistencias" min="1" value="3" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Horarios</label>
+                    <div id="horariosContainer">
+                        <div class="horario-item mb-2 p-2 border rounded">
+                            <div class="row g-2">
+                                <div class="col-md-4">
+                                    <select class="form-select dia-select" required>
+                                        <option value="">Día</option>
+                                        <option value="Lunes">Lunes</option>
+                                        <option value="Martes">Martes</option>
+                                        <option value="Miércoles">Miércoles</option>
+                                        <option value="Jueves">Jueves</option>
+                                        <option value="Viernes">Viernes</option>
+                                        <option value="Sábado">Sábado</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-8">
+                                    <div class="row g-2">
+                                        <div class="col-6">
+                                            <input type="time" class="form-control hora-inicio" required>
+                                        </div>
+                                        <div class="col-6">
+                                            <input type="time" class="form-control hora-fin" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12 mt-2">
+                                    <input type="text" class="form-control aula" placeholder="Aula" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-kawaii btn-sm mt-2" onclick="gestorMaterias.agregarHorario()">
+                        + Agregar otro horario
+                    </button>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Ponderaciones</label>
+                    <div id="ponderacionesContainer">
+                        <div class="ponderacion-item mb-2 p-2 border rounded">
+                            <div class="row g-2">
+                                <div class="col-8">
+                                    <input type="text" class="form-control" placeholder="Nombre de la evaluación" required>
+                                </div>
+                                <div class="col-4">
+                                    <input type="number" class="form-control" placeholder="%" min="0" max="100" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-kawaii btn-sm mt-2" onclick="gestorMaterias.agregarPonderacion()">
+                        + Agregar ponderación
+                    </button>
+                    <small class="text-muted d-block mt-1">La suma debe ser 100%</small>
+                </div>
+
+                <div class="text-end">
+                    <button type="submit" class="btn btn-kawaii">Guardar Materia</button>
+                </div>
+            </form>
+        `;
+
+        // Mostrar el botón de eliminar solo si hay más de un horario
+        const actualizarBotonesEliminar = () => {
+            const horarios = document.querySelectorAll('.horario-item');
+            horarios.forEach(horario => {
+                const btn = horario.querySelector('.eliminar-horario');
+                if (btn) {
+                    btn.style.display = horarios.length > 1 ? 'block' : 'none';
+                }
+            });
+        };
+
+        // Configurar el formulario
+        const formNuevaMateria = document.getElementById('formNuevaMateria');
+        formNuevaMateria.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const nombre = document.getElementById('nombreMateria').value;
+            const profesor = document.getElementById('profesorMateria').value;
+            const limiteInasistencias = document.getElementById('limiteInasistencias').value;
+            
+            // Recolectar horarios
+            const horarios = Array.from(document.querySelectorAll('.horario-item')).map(item => ({
+                dia: item.querySelector('.dia-select').value,
+                horaInicio: item.querySelector('.hora-inicio').value,
+                horaFin: item.querySelector('.hora-fin').value,
+                aula: item.querySelector('.aula').value
+            }));
+
+            // Recolectar ponderaciones
+            const ponderaciones = Array.from(document.querySelectorAll('.ponderacion-item')).map(item => ({
+                nombre: item.querySelector('input[placeholder="Nombre de la evaluación"]').value,
+                porcentaje: parseInt(item.querySelector('input[placeholder="%"]').value)
+            }));
+
+            if (this.agregarMateria(nombre, profesor, limiteInasistencias, horarios, ponderaciones)) {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalNuevaMateria'));
+                if (modal) modal.hide();
+                e.target.reset();
+            }
+        });
+
+        new bootstrap.Modal(document.getElementById('modalNuevaMateria')).show();
+    }
+
+    // Agregar método para actualizar botones de eliminar
+    actualizarBotonesEliminar() {
+        const horarios = document.querySelectorAll('.horario-item');
+        horarios.forEach(horario => {
+            const btn = horario.querySelector('.eliminar-horario');
+            if (btn) {
+                btn.style.display = horarios.length > 1 ? 'block' : 'none';
+            }
+        });
+    }
+
+    // Agregar nuevo método para mostrar comentarios según el promedio
+    mostrarComentarioPromedio(promedio) {
+        if (promedio === 5.0) {
+            this.mostrarKawaiiToast('notas', 'perfecta');
+        } else if (promedio >= 4.5) {
+            this.mostrarKawaiiToast('notas', 'alta');
+        } else if (promedio >= 3.0) {
+            this.mostrarKawaiiToast('notas', 'buena');
+        } else if (promedio >= 2.5) {
+            this.mostrarKawaiiToast('notas', 'regular');
+        } else {
+            this.mostrarKawaiiToast('notas', 'baja');
+        }
+    }
+
+    // Agregar nuevo método para mostrar estadísticas generales
+    mostrarEstadisticasGenerales() {
+        // Destruir gráficos existentes si los hay
+        const chartPromedios = Chart.getChart('graficoPromediosSemestres');
+        const chartMaterias = Chart.getChart('graficoMateriasSemestres');
+        if (chartPromedios) chartPromedios.destroy();
+        if (chartMaterias) chartMaterias.destroy();
+
+        // Calcular estadísticas
+        const estadisticas = this.calcularEstadisticasGenerales();
+        
+        // Modificar las opciones comunes para los gráficos
+        const opcionesComunes = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        boxWidth: 10,
+                        padding: 5,
+                        font: { size: 10 }
+                    }
+                }
+            },
+            layout: {
+                padding: {
+                    left: 10,
+                    right: 10,
+                    top: 10,
+                    bottom: 10
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        font: { size: 9 },
+                        maxTicksLimit: 6
+                    },
+                    grid: {
+                        display: false
+                    }
+                },
+                x: {
+                    ticks: {
+                        font: { size: 9 },
+                        maxRotation: 45,
+                        minRotation: 45
+                    },
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        };
+
+        // Actualizar gráfico de promedios
+        const ctxPromedios = document.getElementById('graficoPromediosSemestres').getContext('2d');
+        new Chart(ctxPromedios, {
+            type: 'line',
+            data: {
+                labels: estadisticas.map(e => e.nombre),
+                datasets: [{
+                    label: 'Promedio',
+                    data: estadisticas.map(e => e.promedio),
+                    borderColor: 'rgba(255, 183, 197, 1)',
+                    backgroundColor: 'rgba(255, 183, 197, 0.2)',
+                    tension: 0.3,
+                    fill: true,
+                    pointRadius: 4 // Puntos más pequeños
+                }]
+            },
+            options: {
+                ...opcionesComunes,
+                scales: {
+                    ...opcionesComunes.scales,
+                    y: {
+                        ...opcionesComunes.scales.y,
+                        max: 5,
+                        min: 0,
+                        ticks: {
+                            stepSize: 1 // Mostrar solo enteros
+                        }
+                    }
+                }
+            }
+        });
+
+        // Actualizar gráfico de materias
+        const ctxMaterias = document.getElementById('graficoMateriasSemestres').getContext('2d');
+        new Chart(ctxMaterias, {
+            type: 'bar',
+            data: {
+                labels: estadisticas.map(e => e.nombre),
+                datasets: [
+                    {
+                        label: 'Aprobadas',
+                        data: estadisticas.map(e => e.materiasAprobadas),
+                        backgroundColor: 'rgba(183, 255, 216, 0.6)',
+                        barPercentage: 0.8, // Hacer las barras más delgadas
+                        categoryPercentage: 0.7
+                    },
+                    {
+                        label: 'Reprobadas',
+                        data: estadisticas.map(e => e.materiasReprobadas),
+                        backgroundColor: 'rgba(255, 183, 197, 0.6)',
+                        barPercentage: 0.8,
+                        categoryPercentage: 0.7
+                    }
+                ]
+            },
+            options: {
+                ...opcionesComunes,
+                scales: {
+                    ...opcionesComunes.scales,
+                    x: {
+                        ...opcionesComunes.scales.x,
+                        stacked: true
+                    },
+                    y: {
+                        ...opcionesComunes.scales.y,
+                        stacked: true,
+                        ticks: {
+                            stepSize: 1, // Solo mostrar números enteros
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+
+        // Actualizar tabla de resumen
+        const tbody = document.getElementById('tablaResumenSemestres');
+        tbody.innerHTML = estadisticas.map(e => `
+            <tr>
+                <td style="width: 20%">${e.nombre}</td>
+                <td style="width: 15%">
+                    <span class="badge ${e.promedio >= 3.0 ? 'bg-success' : 'bg-danger'}">
+                        ${e.promedio.toFixed(1)}
+                    </span>
+                </td>
+                <td style="width: 15%">${e.totalMaterias}</td>
+                <td style="width: 15%" class="text-success">${e.materiasAprobadas}</td>
+                <td style="width: 15%" class="text-danger">${e.materiasReprobadas}</td>
+                <td style="width: 20%">
+                    <span class="badge ${e.estado === 'Completado' ? 'bg-success' : 'bg-warning'}">
+                        ${e.estado}
+                    </span>
+                </td>
+            </tr>
+        `).join('');
+
+        // Mostrar modal de estadísticas
+        const modalEstadisticas = new bootstrap.Modal(document.getElementById('modalEstadisticasGenerales'));
+        modalEstadisticas.show();
+
+        // Calcular y mostrar promedio acumulado
+        const promedioAcumulado = estadisticas.reduce((sum, e) => sum + (e.promedio * e.totalMaterias), 0) / 
+                                 estadisticas.reduce((sum, e) => sum + e.totalMaterias, 0) || 0;
+
+        const promedioAcumuladoElement = document.getElementById('promedioAcumuladoTotal');
+        if (promedioAcumuladoElement) {
+            promedioAcumuladoElement.textContent = promedioAcumulado.toFixed(2);
+            promedioAcumuladoElement.className = `badge ${promedioAcumulado >= 3.0 ? 'bg-success' : 'bg-danger'} px-4`;
+        }
+    }
+
+    // Agregar método para calcular estadísticas
+    calcularEstadisticasGenerales() {
+        return this.semestres.map(semestre => {
+            const materias = semestre.materias || [];
+            const promedios = materias.map(m => this.calcularPromedio(m).valor);
+            const promedio = promedios.length ? 
+                promedios.reduce((a, b) => a + b, 0) / promedios.length : 
+                0;
+
+            const materiasAprobadas = materias.filter(m => this.calcularPromedio(m).valor >= 3.0).length;
+            const materiasReprobadas = materias.length - materiasAprobadas;
+
+            return {
+                nombre: semestre.nombre,
+                promedio,
+                totalMaterias: materias.length,
+                materiasAprobadas,
+                materiasReprobadas,
+                estado: semestre.activo ? 'En Curso' : 'Completado'
+            };
+        });
     }
 }
 
